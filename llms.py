@@ -33,3 +33,25 @@ def run_llm_for_story(story, destination):
             "story": story
         }
     ]
+
+def run_gemini_for_story(story, destination):
+    return [
+        {
+            "location": f"{destination} Lake",
+            "activities": ["Boating"],
+            "description": f"Enjoy {destination} Lake for a peaceful afternoon.",
+            "story": story
+        },
+        # ...
+    ]
+
+def run_openai_for_story(story, destination):
+    return [
+        {
+            "location": f"{destination} Park",
+            "activities": ["Picnic"],
+            "description": f"Have a picnic at {destination} Park.",
+            "story": story
+        },
+        # ...
+    ]
