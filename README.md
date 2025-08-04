@@ -1,41 +1,91 @@
-# LLM Content Generation API
+# kultrip-test-llms
 
-A Flask API for generating content using different LLMs (Large Language Models), ready for Google Cloud deployment.
+**Testing different LLMs for trip inspiration and itinerary building**
+
+---
+
+## Overview
+
+This project aims to generate travel itineraries inspired by user stories, combining activities and experiences from multiple sources:
+
+- **Agency**: Activities offered by travel agencies
+- **Kultrip**: Proprietary or curated activities
+- **LLMs**: Large Language Model-generated suggestions
+- **Tripadvisor** (planned): Public activities, tours, and reviews
+- **GetYourGuide** (planned): Bookable experiences
+- **Internet Search** (planned): General public information and inspiration
+
+Itineraries are personalized based on the destination, story/inspiration, traveler preferences, trip duration and date, and traveler type.
+
+---
 
 ## Features
 
-- Run multiple LLMs (OpenAI, Vertex AI, HuggingFace, etc.)
-- Easily extendable for new models
-- Deployable on Google Cloud Run
+- Aggregate activities from multiple sources
+- Prioritize agency bookable activities
+- Filter activities by preferences, weather/seasonality, and traveler style
+- Generate day-by-day itineraries for user's trip
 
-## Usage
+---
 
-### Locally
+## Planned Enhancements
 
-```bash
-pip install -r requirements.txt
-python app.py
+- Integrate Tripadvisor and GetYourGuide APIs
+- Add internet search enrichment for destination/story
+- Expand data model to include preferences, seasonality, traveler suitability, and agency booking info
+- Advanced filtering and prioritization logic
+
+---
+
+## Setup
+
+1. Clone the repo
+2. Install dependencies:  
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Set up environment variables for external APIs (if needed)
+4. Start the Flask app:
+   ```bash
+   python app.py
+   ```
+
+---
+
+## API Usage
+
+Send a POST request to `/generate_itinerary` with a payload like:
+
+```json
+{
+  "destination": "Wonderland",
+  "story": "Alice wanders through magical lands",
+  "preferences": ["arts", "gastronomy"],
+  "duration": 5,
+  "date_of_trip": "2025-08-10",
+  "number_of_travelers": 2,
+  "traveler_style": "couple"
+}
 ```
 
-### API Endpoints
+---
 
-- `GET /` — Health check
-- `POST /generate` — Generate content  
-  Send JSON: `{ "prompt": "your prompt", "model": "openai" }`
+## Documentation
 
-### Deploy on Google Cloud Run
+- [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md): Step-by-step development guide
+- [DATA_MODEL.md](DATA_MODEL.md): Activity data structure
+- [API_DESIGN.md](API_DESIGN.md): API endpoints and payloads
+- [EXTERNAL_SOURCES.md](EXTERNAL_SOURCES.md): Integration strategies for external data
+- [FILTERING_PRIORITIZATION.md](FILTERING_PRIORITIZATION.md): Filtering and prioritization logic
 
-```bash
-gcloud run deploy --source .
-```
+---
 
-Or using Docker:
+## License
 
-```bash
-docker build -t llm-api .
-docker run -p 8080:8080 llm-api
-```
+MIT License
 
-## Extending
+---
 
-Add support for any model in `llms.py` (implement API calls for OpenAI, Vertex, HuggingFace, etc.).
+## Contributing
+
+Pull requests and suggestions are welcome! See [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md) for open development steps.
