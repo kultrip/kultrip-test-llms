@@ -1,52 +1,50 @@
 from flask import Flask, request, jsonify
-from agency_data import AGENCY_DATA
-from kultrip_data import KULTRIP_DATA
-from llms import run_gemini_for_story, run_openai_for_story
-from merge_utils import merge_and_deduplicate
+from utils.auth import validate_user
+from utils.credits import check_credits, deduct_credits
+from pipeline.collect import collect
+from pipeline.normalize import normalize
+from pipeline.deduplicate import deduplicate
+from pipeline.enrich import enrich
+from pipeline.filter import filter_activities
+from pipeline.prioritize import prioritize
+from pipeline.itinerary import build_itinerary
+from pipeline.translate import translate
 
 app = Flask(__name__)
 
-@app.route("/generate_story", methods=["POST"])
-def generate_story():
+@app.route("/generate_itinerary", methods=["POST"])
+def generate_itinerary():
     data = request.json
-    story = data.get("story")
+    user_token = data.get("user_token")
     destination = data.get("destination")
-    llm_choice = data.get("llm", "gemini")  # Default to gemini if not provided
+    preferences = data.get("preferences", {})
+    language = data.get("language", "en")
+    duration = data.get("duration", 3)
 
-    if not story or not destination:
-        return jsonify(error="Missing 'story' or 'destination'"), 400
+    # 1. Authenticate user and check credits
+    user = validate_user(user_token)
+    if not user:
+        return jsonify(error="Invalid user"), 401
+    if not check_credits(user["id"], duration):
+        return jsonify(error="Insufficient credits"), 402
 
-    # Select LLM function
-    if llm_choice == "openai":
-        llm_data = run_openai_for_story(story, destination)
-    elif llm_choice == "claude":
-        llm_data = run_claude_for_story(story, destination)
-    else:  # Default/fallback to gemini
-        llm_data = run_gemini_for_story(story, destination)
+    # 2. Pipeline steps
+    raw_data = collect(destination, preferences)
+    normalized = normalize(raw_data)
+    deduped = deduplicate(normalized)
+    enriched = enrich(deduped)
+    filtered = filter_activities(enriched, preferences)
+    prioritized = prioritize(filtered, preferences)
+    itinerary = build_itinerary(prioritized, duration)
 
-    # Filter agency and kultrip data by story
-    agency_data_filtered = [entry for entry in AGENCY_DATA if entry["story"] == story]
-    kultrip_data_filtered = [entry for entry in KULTRIP_DATA if entry["story"] == story]
+    # 3. Translate if needed
+    if language != "en":
+        itinerary = translate(itinerary, language)
 
-    # Tag each data source
-    all_data = []
-    for entry in agency_data_filtered:
-        entry_copy = entry.copy()
-        entry_copy["source"] = "agency"
-        all_data.append(entry_copy)
-    for entry in kultrip_data_filtered:
-        entry_copy = entry.copy()
-        entry_copy["source"] = "kultrip"
-        all_data.append(entry_copy)
-    for entry in llm_data:
-        entry_copy = entry.copy()
-        entry_copy["source"] = "llm"
-        all_data.append(entry_copy)
+    # 4. Deduct credits
+    deduct_credits(user["id"], duration)
 
-    # Deduplicate across all sources
-    combined = merge_and_deduplicate(all_data)
-
-    return jsonify(combined)
+    return jsonify(itinerary)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
