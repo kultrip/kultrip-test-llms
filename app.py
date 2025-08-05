@@ -12,12 +12,13 @@ from pipeline.translate import translate
 
 app = Flask(__name__)
 
-@app.route("/generate_itinerary", methods=["POST"])
+@app.route('/generate_itinerary', methods=['POST'])
 def generate_itinerary():
     data = request.json
     user_token = data.get("user_token")
     destination = data.get("destination")
     preferences = data.get("preferences", {})
+    inspiration = data.get("inspiration")  # <---- NEW LINE: get inspiration from request
     language = data.get("language", "en")
     duration = data.get("duration", 3)
 
@@ -29,16 +30,16 @@ def generate_itinerary():
         return jsonify(error="Insufficient credits"), 402
 
     # 2. Pipeline steps
-    raw_data = collect(destination, preferences)
+    raw_data = collect(destination, preferences, inspiration)  # <---- PASS inspiration to collect
     normalized = normalize(raw_data)
     deduped = deduplicate(normalized)
     enriched = enrich(deduped)
     filtered = filter_activities(enriched, preferences)
     prioritized = prioritize(filtered, preferences)
-    itinerary = build_itinerary(prioritized, duration)
+    itinerary = build_itinerary(prioritized, duration, inspiration=inspiration)  # <---- PASS inspiration
 
     # 3. Translate if needed
-    if language != "en":
+    if language != "en": 
         itinerary = translate(itinerary, language)
 
     # 4. Deduct credits
